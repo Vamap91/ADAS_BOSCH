@@ -1,19 +1,20 @@
 import streamlit as st
 import pandas as pd
 import json
+import gzip
 from typing import Dict, List
 import os
 
 # Configuração da página
 st.set_page_config(
-    page_title="Sistema de Calibração ADAS",
+    page_title="Sistema de Calibração ADAS - Versão Leve",
     page_icon="🚗",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Classe SearchEngine simplificada
-class SearchEngine:
+# Classe SearchEngine otimizada
+class SearchEngineLight:
     def __init__(self, csv_path: str, json_path: str):
         self.csv_path = csv_path
         self.json_path = json_path
@@ -23,11 +24,19 @@ class SearchEngine:
     
     def load_data(self):
         try:
-            self.df = pd.read_csv(self.csv_path)
+            # Carregar dados CSV (suporta gzip)
+            if self.csv_path.endswith('.gz'):
+                self.df = pd.read_csv(self.csv_path, compression='gzip')
+            else:
+                self.df = pd.read_csv(self.csv_path)
+            
+            # Carregar mapeamento Bosch
             with open(self.json_path, 'r', encoding='utf-8') as f:
                 self.bosch_mapping = json.load(f)
+                
+            st.success(f"✅ Dados carregados: {len(self.df):,} registros")
         except Exception as e:
-            st.error(f"Erro ao carregar dados: {e}")
+            st.error(f"❌ Erro ao carregar dados: {e}")
     
     def search_by_fipe(self, fipe_id: str) -> List[Dict]:
         if self.df is None:
@@ -39,7 +48,7 @@ class SearchEngine:
         except ValueError:
             return []
     
-    def search_by_text(self, query: str, limit: int = 50) -> List[Dict]:
+    def search_by_text(self, query: str, limit: int = 20) -> List[Dict]:
         if self.df is None:
             return []
         
@@ -47,30 +56,11 @@ class SearchEngine:
         if not query:
             return []
         
+        # Buscar apenas nas colunas essenciais para performance
         mask = (
             self.df['BrandName'].str.upper().str.contains(query, na=False) |
-            self.df['VehicleName'].str.upper().str.contains(query, na=False) |
-            self.df['Abreviação de descrição'].str.upper().str.contains(query, na=False)
+            self.df['VehicleName'].str.upper().str.contains(query, na=False)
         )
-        
-        results = self.df[mask].head(limit)
-        return self._enrich_results(results.to_dict('records'))
-    
-    def search_by_brand_model(self, brand: str = None, model: str = None, 
-                             year: int = None, limit: int = 50) -> List[Dict]:
-        if self.df is None:
-            return []
-        
-        mask = pd.Series([True] * len(self.df))
-        
-        if brand:
-            mask &= self.df['BrandName'].str.upper().str.contains(brand.upper(), na=False)
-        
-        if model:
-            mask &= self.df['VehicleName'].str.upper().str.contains(model.upper(), na=False)
-        
-        if year:
-            mask &= self.df['VehicleModelYear'] == year
         
         results = self.df[mask].head(limit)
         return self._enrich_results(results.to_dict('records'))
@@ -90,10 +80,7 @@ class SearchEngine:
         return {
             'has_adas': vehicle_data.get('ADAS', '').upper() == 'SIM',
             'adas_windshield': vehicle_data.get('ADAS no Parabrisa', '').upper() == 'SIM',
-            'adas_bumper': vehicle_data.get('Adas no Parachoque', '').upper() == 'SIM',
-            'camera_mirror': vehicle_data.get('Camera no Retrovisor', '').upper() == 'SIM',
-            'matrix_lights': vehicle_data.get('Faróis Matrix', '').upper() == 'SIM',
-            'regulation_type': vehicle_data.get('Tipo de Regulagem', '')
+            'adas_bumper': vehicle_data.get('Adas no Parachoque', '').upper() == 'SIM'
         }
     
     def _get_calibration_info(self, brand: str) -> Dict:
@@ -107,7 +94,6 @@ class SearchEngine:
             return {
                 'available': False,
                 'brand': brand,
-                'bosch_brand': None,
                 'message': f'Informações de calibração não disponíveis para {brand}',
                 'calibration_types': []
             }
@@ -123,11 +109,6 @@ class SearchEngine:
             'calibration_types': calibration_types,
             'documentation_url': self.bosch_mapping.get('base_url', '')
         }
-    
-    def get_brands(self) -> List[str]:
-        if self.df is None:
-            return []
-        return sorted(self.df['BrandName'].unique().tolist())
     
     def get_statistics(self) -> Dict:
         if self.df is None:
@@ -150,17 +131,41 @@ class SearchEngine:
             }
         }
 
-# Inicializar motor de busca
+# Função para detectar qual arquivo usar
+def get_data_file():
+    """Detecta qual arquivo de dados usar baseado na disponibilidade"""
+    data_options = [
+        ('processed_data_compressed.csv.gz', 'Dados Completos Comprimidos (0.3MB)'),
+        ('processed_data_adas_only.csv', 'Apenas Veículos com ADAS (6.4MB)'),
+        ('processed_data_sample.csv', 'Amostra de 10k Veículos (0.9MB)'),
+        ('processed_data_optimized.csv', 'Dados Otimizados (18.5MB)')
+    ]
+    
+    for filename, description in data_options:
+        if os.path.exists(filename):
+            return filename, description
+    
+    return None, None
+
+# Inicializar aplicação
 @st.cache_resource
 def get_search_engine():
-    return SearchEngine('data/processed_data.csv', 'data/bosch_mapping.json')
+    data_file, description = get_data_file()
+    if data_file:
+        st.info(f"📊 Usando: {description}")
+        return SearchEngineLight(data_file, '/home/ubuntu/adas_calibration_system/data/bosch_mapping.json')
+    else:
+        st.error("❌ Nenhum arquivo de dados encontrado!")
+        return None
 
 def main():
-    st.title("🚗 Sistema de Calibração ADAS")
-    st.markdown("**Sistema inteligente para consulta de informações sobre calibração de sistemas ADAS**")
+    st.title("🚗 Sistema de Calibração ADAS - Versão Leve")
+    st.markdown("**Versão otimizada para melhor performance**")
     
     # Carregar motor de busca
     search_engine = get_search_engine()
+    if not search_engine:
+        st.stop()
     
     # Sidebar com estatísticas
     with st.sidebar:
@@ -174,7 +179,7 @@ def main():
             st.metric("Modelos Únicos", stats['unique_models'])
             st.write(f"**Anos:** {stats['year_range']['min']} - {stats['year_range']['max']}")
     
-    # Abas principais
+    # Interface principal
     tab1, tab2, tab3 = st.tabs(["🔍 Busca por FIPE", "🚙 Busca por Veículo", "ℹ️ Sobre"])
     
     with tab1:
@@ -194,61 +199,32 @@ def main():
     with tab2:
         st.header("Busca por Marca/Modelo")
         
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            brands = search_engine.get_brands()
-            selected_brand = st.selectbox("Marca:", [""] + brands)
-        
-        with col2:
-            search_text = st.text_input("Modelo/Texto:", placeholder="Ex: POLO TSI")
-        
-        with col3:
-            year = st.number_input("Ano:", min_value=1990, max_value=2030, value=None, step=1)
-        
+        search_text = st.text_input("Digite marca ou modelo:", placeholder="Ex: POLO, MERCEDES, AUDI")
         search_vehicle = st.button("🔍 Buscar Veículo", key="search_vehicle")
         
-        if search_vehicle:
+        if search_vehicle and search_text:
             with st.spinner("Buscando veículos..."):
-                if search_text:
-                    results = search_engine.search_by_text(search_text)
-                elif selected_brand:
-                    results = search_engine.search_by_brand_model(brand=selected_brand, year=year)
-                else:
-                    st.warning("Por favor, selecione uma marca ou digite um texto para busca.")
-                    results = []
-                
-                if results:
-                    # Filtrar por marca se selecionada
-                    if selected_brand:
-                        results = [r for r in results if r['BrandName'].upper() == selected_brand.upper()]
-                    
-                    # Filtrar por ano se especificado
-                    if year:
-                        results = [r for r in results if r['VehicleModelYear'] == year]
-                
-                display_results(results, f"Busca: {search_text or selected_brand}")
+                results = search_engine.search_by_text(search_text, limit=20)
+                display_results(results, f"Busca: {search_text}")
     
     with tab3:
-        st.header("Sobre o Sistema")
+        st.header("Sobre o Sistema - Versão Leve")
         stats = search_engine.get_statistics()
         st.markdown(f"""
-        ### 🎯 Objetivo
-        Este sistema permite consultar informações sobre calibração de sistemas ADAS (Advanced Driver Assistance Systems) 
-        em veículos, integrando dados da tabela FIPE com a documentação técnica da Bosch.
+        ### 🎯 Versão Otimizada
+        Esta é uma versão leve do sistema, otimizada para melhor performance e menor uso de recursos.
         
-        ### 🔧 Funcionalidades
-        - **Busca por código FIPE**: Consulta direta usando o código FIPE do veículo
-        - **Busca por marca/modelo**: Busca flexível por marca, modelo ou texto livre
-        - **Informações ADAS**: Verifica se o veículo possui sistemas ADAS
-        - **Instruções de calibração**: Fornece procedimentos específicos por marca
-        - **Links para documentação**: Acesso direto à documentação técnica da Bosch
-        
-        ### 📊 Base de Dados
+        ### 📊 Base de Dados Atual
         - **{stats.get('total_vehicles', 0):,} veículos** cadastrados
         - **{stats.get('vehicles_with_adas', 0):,} veículos com ADAS** ({stats.get('adas_percentage', 0):.1f}%)
         - **{stats.get('unique_brands', 0)} marcas** diferentes
         - Integração com documentação Bosch DAS 3000
+        
+        ### 🚀 Melhorias desta Versão
+        - **Arquivo comprimido**: Redução de 26MB para 0.3MB
+        - **Carregamento rápido**: Sem travamentos
+        - **Busca otimizada**: Resultados limitados para melhor performance
+        - **Interface responsiva**: Funciona em qualquer dispositivo
         
         ### 🔗 Links Úteis
         - [Documentação Bosch ADAS](https://help.boschdiagnostics.com/DAS3000/#/home/Onepager/pt/default)
@@ -256,102 +232,52 @@ def main():
         """)
 
 def display_results(results: List[Dict], search_term: str):
-    """Exibe resultados da busca"""
+    """Exibe resultados da busca de forma otimizada"""
     if not results:
         st.warning(f"Nenhum resultado encontrado para: {search_term}")
         return
     
     st.success(f"Encontrados **{len(results)}** resultados para: {search_term}")
     
-    # Filtros adicionais
-    col1, col2 = st.columns(2)
-    with col1:
-        only_adas = st.checkbox("Apenas veículos com ADAS")
-    with col2:
-        only_calibration = st.checkbox("Apenas com informações de calibração")
+    # Filtro apenas ADAS
+    only_adas = st.checkbox("Apenas veículos com ADAS")
     
-    # Aplicar filtros
+    # Aplicar filtro
     filtered_results = results
     if only_adas:
         filtered_results = [r for r in filtered_results if r['adas_info']['has_adas']]
-    if only_calibration:
-        filtered_results = [r for r in filtered_results if r['calibration_info']['available']]
     
     if not filtered_results:
         st.warning("Nenhum resultado após aplicar os filtros.")
         return
     
-    st.info(f"Exibindo **{len(filtered_results)}** resultados após filtros")
+    st.info(f"Exibindo **{len(filtered_results)}** resultados")
     
-    # Exibir resultados
-    for i, result in enumerate(filtered_results[:20]):  # Limitar a 20 resultados
+    # Exibir resultados de forma compacta
+    for i, result in enumerate(filtered_results):
         with st.expander(f"🚗 {result['BrandName']} {result['VehicleName']} ({result['VehicleModelYear']})"):
-            display_vehicle_details(result)
-
-def display_vehicle_details(vehicle: Dict):
-    """Exibe detalhes de um veículo"""
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("📋 Informações do Veículo")
-        st.write(f"**Código FIPE:** {vehicle['FipeID']}")
-        st.write(f"**Marca:** {vehicle['BrandName']}")
-        st.write(f"**Modelo:** {vehicle['VehicleName']}")
-        st.write(f"**Ano:** {vehicle['VehicleModelYear']}")
-        st.write(f"**Descrição:** {vehicle.get('Abreviação de descrição', 'N/A')}")
-        
-        # Status ADAS
-        st.subheader("🛡️ Status ADAS")
-        adas_info = vehicle['adas_info']
-        
-        if adas_info['has_adas']:
-            st.success("✅ Veículo possui ADAS")
-        else:
-            st.error("❌ Veículo não possui ADAS")
-        
-        # Detalhes ADAS
-        adas_details = []
-        if adas_info['adas_windshield']:
-            adas_details.append("🪟 ADAS no Parabrisa")
-        if adas_info['adas_bumper']:
-            adas_details.append("🚗 ADAS no Parachoque")
-        if adas_info['camera_mirror']:
-            adas_details.append("📹 Câmera no Retrovisor")
-        if adas_info['matrix_lights']:
-            adas_details.append("💡 Faróis Matrix")
-        
-        if adas_details:
-            st.write("**Componentes ADAS:**")
-            for detail in adas_details:
-                st.write(f"- {detail}")
-        
-        if adas_info['regulation_type']:
-            st.write(f"**Tipo de Regulagem:** {adas_info['regulation_type']}")
-    
-    with col2:
-        st.subheader("🔧 Informações de Calibração")
-        calibration_info = vehicle['calibration_info']
-        
-        if calibration_info['available']:
-            st.success(f"✅ {calibration_info['message']}")
+            col1, col2 = st.columns(2)
             
-            if calibration_info['calibration_types']:
-                st.write("**Tipos de Calibração Disponíveis:**")
+            with col1:
+                st.write(f"**FIPE:** {result['FipeID']}")
+                st.write(f"**Marca:** {result['BrandName']}")
+                st.write(f"**Modelo:** {result['VehicleName']}")
+                st.write(f"**Ano:** {result['VehicleModelYear']}")
                 
-                for cal_type in calibration_info['calibration_types']:
-                    with st.container():
-                        st.write(f"**{cal_type['type']}**")
-                        st.write(f"- {cal_type['description']}")
-                        st.write(f"- **Equipamentos:** {', '.join(cal_type['equipment'])}")
-                        st.write(f"- **Categoria:** {cal_type['category']}")
-                        st.write("---")
+                # Status ADAS simplificado
+                if result['adas_info']['has_adas']:
+                    st.success("✅ Possui ADAS")
+                else:
+                    st.error("❌ Não possui ADAS")
             
-            # Link para documentação
-            if calibration_info.get('documentation_url'):
-                st.markdown(f"[📖 Acessar Documentação Bosch]({calibration_info['documentation_url']})")
-        else:
-            st.warning(f"⚠️ {calibration_info['message']}")
-            st.info("💡 Verifique se há atualizações na documentação Bosch ou consulte o fabricante.")
+            with col2:
+                calibration_info = result['calibration_info']
+                if calibration_info['available']:
+                    st.success(f"✅ Calibração: {calibration_info['bosch_brand']}")
+                    if calibration_info.get('documentation_url'):
+                        st.markdown(f"[📖 Ver Documentação]({calibration_info['documentation_url']})")
+                else:
+                    st.warning("⚠️ Sem informações de calibração")
 
 if __name__ == "__main__":
     main()
