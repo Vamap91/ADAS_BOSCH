@@ -1,1 +1,168 @@
-
+{
+ "BMW_GERAL": {
+   "data": {
+     "brand": "BMW",
+     "source": "Base de Conhecimento Técnico",
+     "url": "N/A",
+     "last_updated": "11/08/2025 14:30",
+     "calibration_types": ["Calibração Dinâmica", "Calibração Estática"],
+     "general_steps": [
+       "1. Conectar equipamento DAS 3000 à porta OBD-II",
+       "2. Selecionar \"BMW\" no menu principal",
+       "3. Navegar para \"Sistema ADAS\" → \"Calibração\"",
+       "4. Selecionar tipo de calibração (Estática/Dinâmica)",
+       "5. Seguir instruções na tela do equipamento",
+       "6. Realizar test drive para validação (se dinâmica)",
+       "7. Verificar códigos de erro após calibração"
+     ],
+     "requirements": [
+       "Equipamento DAS 3000 ou compatível",
+       "Superfície plana e nivelada (calibração estática)",
+       "Pista de teste adequada (calibração dinâmica)",
+       "Condições climáticas favoráveis",
+       "Pneus calibrados corretamente",
+       "Alinhamento de direção em dia"
+     ],
+     "warnings": [
+       "⚠️ Verificar recall de software antes da calibração",
+       "⚠️ Não realizar calibração com defeitos pendentes",
+       "⚠️ Temperatura ambiente entre 5°C e 35°C"
+     ],
+     "estimated_time": "45-90 minutos",
+     "equipment_needed": ["DAS 3000", "Targets de calibração", "Scanner OBD"]
+   },
+   "timestamp": "2025-08-11T14:30:00"
+ },
+ "VOLKSWAGEN_GERAL": {
+   "data": {
+     "brand": "VOLKSWAGEN",
+     "source": "Base de Conhecimento Técnico",
+     "url": "N/A",
+     "last_updated": "11/08/2025 14:30",
+     "calibration_types": ["Calibração Estática", "Calibração Dinâmica"],
+     "general_steps": [
+       "1. Verificar códigos de defeito com VCDS/ODIS",
+       "2. Posicionar veículo conforme especificações",
+       "3. Instalar targets de calibração apropriados",
+       "4. Conectar equipamento de diagnóstico",
+       "5. Acessar Central de Conforto → ADAS",
+       "6. Executar \"Calibração da Câmera Frontal\"",
+       "7. Validar com test drive controlado"
+     ],
+     "requirements": [
+       "VCDS, ODIS ou equipamento compatível",
+       "Targets específicos VW/Audi",
+       "Ambiente com iluminação adequada",
+       "Bateria com carga mínima de 12,5V",
+       "Sistema de direção centralizado"
+     ],
+     "warnings": [
+       "⚠️ Respeitar distâncias especificadas para targets",
+       "⚠️ Não mover o veículo durante calibração estática",
+       "⚠️ Verificar se para-brisa não possui trincas"
+     ],
+     "estimated_time": "30-60 minutos",
+     "equipment_needed": ["VCDS/ODIS", "Targets VW", "Multímetro"]
+   },
+   "timestamp": "2025-08-11T14:30:00"
+ },
+ "MERCEDES-BENZ_GERAL": {
+   "data": {
+     "brand": "MERCEDES-BENZ",
+     "source": "Base de Conhecimento Técnico",
+     "url": "N/A",
+     "last_updated": "11/08/2025 14:30",
+     "calibration_types": ["Calibração Estática Mercedes", "Calibração Dinâmica"],
+     "general_steps": [
+       "1. Conectar Star Diagnosis ou DAS 3000",
+       "2. Selecionar modelo específico do veículo",
+       "3. Acessar \"Sistemas de Assistência\"",
+       "4. Selecionar \"Calibração Radar/Câmera\"",
+       "5. Seguir procedimento guiado",
+       "6. Confirmar geometria da suspensão",
+       "7. Finalizar com test drive de validação"
+     ],
+     "requirements": [
+       "Star Diagnosis ou DAS 3000",
+       "Reflectores específicos Mercedes-Benz",
+       "Altura correta da suspensão",
+       "Pressão dos pneus conforme especificação",
+       "Centro de alinhamento certificado"
+     ],
+     "warnings": [
+       "⚠️ Alguns modelos requerem atualização de software",
+       "⚠️ Verificar se suspensão não foi modificada",
+       "⚠️ Temperatura de operação: -10°C a +50°C"
+     ],
+     "estimated_time": "60-120 minutos",
+     "equipment_needed": ["Star Diagnosis", "Reflectores MB", "Medidor de altura"]
+   },
+   "timestamp": "2025-08-11T14:30:00"
+ },
+ "AUDI_GERAL": {
+   "data": {
+     "brand": "AUDI",
+     "source": "Base de Conhecimento Técnico",
+     "url": "N/A",
+     "last_updated": "11/08/2025 14:30",
+     "calibration_types": ["Calibração Estática", "Calibração Dinâmica"],
+     "general_steps": [
+       "1. Conectar VCDS ou ODIS Service",
+       "2. Identificar sistemas ADAS presentes",
+       "3. Posicionar targets conforme especificação Audi",
+       "4. Executar calibração da câmera frontal",
+       "5. Calibrar sensores radar se aplicável",
+       "6. Verificar funcionamento dos sistemas",
+       "7. Realizar test drive de validação"
+     ],
+     "requirements": [
+       "VCDS ou ODIS Service",
+       "Targets específicos do grupo VAG",
+       "Superfície nivelada e demarcada",
+       "Iluminação uniforme sem sombras",
+       "Bateria carregada acima de 12V"
+     ],
+     "warnings": [
+       "⚠️ Verificar se veículo possui adaptive cruise control",
+       "⚠️ Alguns modelos requerem codificação após calibração",
+       "⚠️ Não calibrar com pneus de dimensões diferentes"
+     ],
+     "estimated_time": "45-75 minutos",
+     "equipment_needed": ["ODIS", "Targets VAG", "Nível a laser"]
+   },
+   "timestamp": "2025-08-11T14:30:00"
+ },
+ "TOYOTA_GERAL": {
+   "data": {
+     "brand": "TOYOTA",
+     "source": "Base de Conhecimento Técnico",
+     "url": "N/A",
+     "last_updated": "11/08/2025 14:30",
+     "calibration_types": ["Calibração Estática", "Calibração Dinâmica"],
+     "general_steps": [
+       "1. Conectar scanner Toyota Techstream",
+       "2. Verificar códigos DTC do sistema TSS",
+       "3. Posicionar veículo a 3m dos targets",
+       "4. Executar calibração do Pre-Collision System",
+       "5. Calibrar Lane Departure Alert se presente",
+       "6. Validar Dynamic Radar Cruise Control",
+       "7. Confirmar funcionamento com test drive"
+     ],
+     "requirements": [
+       "Toyota Techstream ou equivalente",
+       "Targets específicos Toyota Safety Sense",
+       "Ambiente fechado sem interferências",
+       "Altura dos targets conforme especificação",
+       "Veículo com tanque pelo menos 1/2 cheio"
+     ],
+     "warnings": [
+       "⚠️ Calibração obrigatória após substituição do para-brisa",
+       "⚠️ Verificar se sistema não está em modo de aprendizagem",
+       "⚠️ Respeitar sequência de calibração dos sensores"
+     ],
+     "estimated_time": "40-65 minutos",
+     "equipment_needed": ["Techstream", "Targets TSS", "Trena laser"]
+   },
+   "timestamp": "2025-08-11T14:30:00"
+ }
+}
